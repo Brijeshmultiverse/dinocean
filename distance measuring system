@@ -1,0 +1,95 @@
+#include <SPI.h>
+#include <SD.h>
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
+
+// Define the pins for the ultrasonic sensor
+const int trigPin = 9;  // Trigger pin
+const int echoPin = 10; // Echo pin
+
+// Variables for storing the duration and distance
+long duration;
+int distance;
+
+// File on the SD card
+File myFile;
+
+// Define LCD settings
+LiquidCrystal_I2C lcd(0x27, 16, 2);  // I2C address 0x27, 16 column and 2 rows
+
+void setup() {
+  // Start the serial communication
+  Serial.begin(9600);
+
+  // Set up the LCD
+  lcd.begin(16, 2);
+  lcd.print("Distance:");
+
+  // Set the trigger pin as an output
+  pinMode(trigPin, OUTPUT);
+  // Set the echo pin as an input
+  pinMode(echoPin, INPUT);
+
+  // Initialize the SD card
+  if (!SD.begin(4)) {
+    Serial.println("SD Card initialization failed!");
+    lcd.clear();
+    lcd.print("SD Card Error");
+    return;
+  }
+
+  // Open the file for writing
+  myFile = SD.open("distance.txt", FILE_WRITE);
+
+  // Check if the file opened successfully
+  if (myFile) {
+    Serial.println("File opened successfully");
+    myFile.println("Distance Data:");
+  } else {
+    Serial.println("Error opening file");
+    lcd.clear();
+    lcd.print("File Error");
+  }
+}
+
+void loop() {
+  // Trigger the ultrasonic sensor to send a pulse
+  digitalWrite(trigPin, LOW);
+  delayMicroseconds(2);
+  digitalWrite(trigPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPin, LOW);
+
+  // Measure the duration of the pulse on the echo pin
+  duration = pulseIn(echoPin, HIGH);
+
+  // Calculate the distance in centimeters
+  distance = duration * 0.034 / 2;
+
+  // Print the distance to the Serial Monitor
+  Serial.print("Distance: ");
+  Serial.print(distance);
+  Serial.println(" cm");
+
+  // Display the distance on the LCD
+  lcd.setCursor(0, 1);
+  lcd.print("               "); // Clear the previous distance value
+  lcd.setCursor(0, 1);
+  lcd.print("Distance: ");
+  lcd.print(distance);
+  lcd.print(" cm");
+
+  // Write the distance to the file on the SD card
+  if (myFile) {
+    myFile.print("Distance: ");
+    myFile.print(distance);
+    myFile.println(" cm");
+  } else {
+    Serial.println("Error writing to file");
+    lcd.clear();
+    lcd.print("File Error");
+  }
+
+  // Wait for a short delay before taking the next measurement
+  delay(500);
+}
