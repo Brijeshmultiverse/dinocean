@@ -1,0 +1,55 @@
+#include <Wire.h>
+#include <DHT.h>
+#include <MQUnifiedsensor.h>
+
+#define DHT_PIN 2  // Replace with the actual pin you are using for DHT11
+#define GAS_SENSOR_ANALOG_PIN A0
+
+// Threshold values for air quality
+#define TEMPERATURE_THRESHOLD 25.0  // in degrees Celsius
+#define HUMIDITY_THRESHOLD 60.0     // in percentage
+#define GAS_THRESHOLD 50.0          // adjust this based on your gas sensor
+
+DHT dht(DHT_PIN, DHT11);
+MQUnifiedsensor gasSensor("MQ-7", A0);
+
+void setup() {
+  Serial.begin(9600);
+
+  dht.begin();
+  gasSensor.begin();
+}
+
+void loop() {
+  float temperature = dht.readTemperature();
+  float humidity = dht.readHumidity();
+  float gasConcentration = gasSensor.readSensor();
+
+  Serial.print("Temperature: ");
+  Serial.print(temperature);
+  Serial.println(" °C");
+
+  Serial.print("Humidity: ");
+  Serial.print(humidity);
+  Serial.println(" %");
+
+  Serial.print("Gas Concentration: ");
+  Serial.print(gasConcentration);
+  Serial.println(" ppm");
+
+  // Check air quality and recommend actions
+  if (temperature > TEMPERATURE_THRESHOLD) {
+    Serial.println("Warning: High temperature! Consider ventilating the area.");
+  }
+
+  if (humidity > HUMIDITY_THRESHOLD) {
+    Serial.println("Warning: High humidity! Ensure proper ventilation.");
+  }
+
+  if (gasConcentration > GAS_THRESHOLD) {
+    Serial.println("Warning: High gas concentration! Ventilate the area and check for gas leaks.");
+  }
+
+  // Add delay before taking the next reading
+  delay(1000);
+}
